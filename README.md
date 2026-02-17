@@ -14,7 +14,18 @@ le code qui devra piloter les volets (GPIO, IPC, etc.). Le service :
 ## Prérequis
 
 - Rust toolchain (stable) et `cargo`.
-- Avoir une cle OPENWEATHER_API_KEY dans les variable d'env (soit via la conf du service soit via un export dans un sh)
+- Avoir une cle OPENWEATHER_API_KEY dans les variable d'env 
+
+```bash
+sudo nano /etc/shutter_env
+```
+
+```text
+OPENWEATHER_API_KEY=votre_cle_ici
+LATITUDE=48.4333
+LONGITUDE=-4.6167
+RUST_LOG=info
+```
 
 ## Build & exécution
 

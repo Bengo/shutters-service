@@ -12,9 +12,7 @@ ExecStart=/opt/shutters-service/shutters-service
 Restart=on-failure
 RestartSec=5
 LimitNOFILE=4096
-Environment=LATITUDE="48.4333"
-Environment=LONGITUDE="-4.6167"
-Environment=RUST_LOG=info
+EnvironmentFile=/etc/shutter_env
 
 [Install]
 WantedBy=multi-user.target
