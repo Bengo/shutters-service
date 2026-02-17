@@ -1,0 +1,20 @@
+[Unit]
+Description=Shutters Service
+After=network.target
+
+[Service]
+Type=simple
+NotifyAccess=main
+User=shutters
+Group=shutters
+WorkingDirectory=/opt/shutters-service
+ExecStart=/opt/shutters-service/shutters-service
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=4096
+Environment=LATITUDE="48.4333"
+Environment=LONGITUDE="-4.6167"
+Environment=RUST_LOG=info
+
+[Install]
+WantedBy=multi-user.target

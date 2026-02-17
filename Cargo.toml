@@ -1,0 +1,19 @@
+[package]
+name = "shutters-service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ctrlc = "3"
+log = "0.4"
+env_logger = "0.10"
+# GPIO
+rppal = "0.22.1"  # Raspberry Pi GPIO library for Rust
+
+# Weather-related dependencies (mirrored from shutters-core)
+openweather_sdk = "0.1.8"
+tokio = { version = "1.49.0", features = ["full"] }
+chrono = "0.4"
+chrono-tz = "0.8"
+sunrise = "3.0.0"
+libsystemd = "0.7.2"
