@@ -14,7 +14,7 @@ impl Shutter {
         // Code to open the shutter (simulate GPIO operation)
         debug!("Opening shutter on GPIO pin {}", self.number);    
         for _ in 0..3 {
-            self.impulse(1000).await;
+            self.impulse(100).await;
         }
     }
 
@@ -44,7 +44,7 @@ impl Shutter {
         // Code to set the shutter to the middle position (simulate GPIO operation)
         debug!("Setting shutter to middle position on GPIO pin {}", self.number);    
         self.open().await;
-        tokio::time::sleep(tokio::time::Duration::from_millis(18000)).await;
+        tokio::time::sleep(tokio::time::Duration::from_millis(180000)).await;
         self.close().await;
         tokio::time::sleep(tokio::time::Duration::from_millis(8800)).await;
         self.stop().await;

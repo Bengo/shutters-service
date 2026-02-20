@@ -1,4 +1,5 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
+use tokio::sync::Mutex; // Remplace std::sync::Mutex
 use openweather_sdk::{OpenWeather, Units, Language};
 use chrono::{Timelike, Utc};
 use chrono_tz::Europe::Paris;
@@ -25,7 +26,7 @@ impl std::fmt::Debug for WeatherData {
     }
 }
 
-pub async fn get_weather(weather_response: Arc<Mutex<WeatherData>>) {
+pub async fn get_weather() -> WeatherData {
     let openweather = OpenWeather::new(
         std::env::var("OPENWEATHER_API_KEY").unwrap(),
         Units::Metric,
@@ -41,13 +42,12 @@ pub async fn get_weather(weather_response: Arc<Mutex<WeatherData>>) {
     let res = openweather.current.call(lat, lon).await;
     debug!("Weather response: {res:?}");
     let current_weather = res.as_ref().unwrap();
-    // Store the response in the shared variable
-    let mut response = weather_response.lock().unwrap();
-    *response = WeatherData {
+    let response = WeatherData {
         temperature: current_weather.main.temp,
         wind_speed: current_weather.wind.speed,
         clouds: current_weather.clouds.all
     };
+    return response;
 }
 
 pub async fn schedule_hourly_between_sunrise_sunset(weather_response: Arc<Mutex<WeatherData>>, running_loop: Arc<AtomicBool>) {
@@ -75,8 +75,9 @@ pub async fn schedule_hourly_between_sunrise_sunset(weather_response: Arc<Mutex<
             // Si on est entre le lever et le coucher du soleil
             if let (Some(sunrise), Some(sunset)) = (sunrise_time, sunset_time) {
                 if paris_time.time() >= sunrise && paris_time.time() < sunset {
-                    get_weather(weather_response.clone()).await;
-                    
+                    let mut wr = weather_response.lock().await;
+                    let weather_data = get_weather().await;
+                    *wr = weather_data;
                     // Attendre jusqu'à l'heure suivante
                     let next_hour = (paris_time.hour() + 1) % 24;
                     let minutes_to_wait = 60 - paris_time.minute();
