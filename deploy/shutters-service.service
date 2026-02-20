@@ -5,8 +5,8 @@ After=network.target
 [Service]
 Type=simple
 NotifyAccess=main
-User=shutters
-Group=shutters
+User=bengo
+Group=gpio
 WorkingDirectory=/opt/shutters-service
 ExecStart=/opt/shutters-service/shutters-service
 Restart=on-failure

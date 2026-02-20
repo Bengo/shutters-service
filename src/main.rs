@@ -1,6 +1,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 use tokio::time::Duration;
+use tokio::sync::Mutex; // Remplace std::sync::Mutex
 
 extern crate libsystemd;
 use libsystemd::daemon::{self};
@@ -12,6 +13,7 @@ mod shutter;
 mod house;
 use shutter::driver::Shutter;
 use house::house::House;
+use house::house::HouseMode;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -44,18 +46,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let scheduler_wr = weather_response.clone();
     let running_clone = running.clone();
     tokio::spawn(async move {
-        // ensure at least one immediate fetch
-        if scheduler_wr.lock().unwrap().temperature == 0.0 {
-             info!("Performing initial weather fetch...");
-             weather::openweather::get_weather(scheduler_wr.clone()).await;
+        // 1. On détermine si on doit fetcher SANS garder le lock ouvert
+        let is_initial_data_empty = {
+            let wr = scheduler_wr.lock().await;
+            wr.temperature == 0.0 
+        }; // Le garde 'wr' est officiellement détruit ici.
+
+        // 2. Maintenant on peut faire des .await sans porter de verrou
+        if is_initial_data_empty {
+            info!("Performing initial weather fetch...");
+            let weather_data = weather::openweather::get_weather().await;
+            let mut wr = scheduler_wr.lock().await;
+            *wr = weather_data;
         }
+
         info!("Scheduling weather fetcher ...");
-        weather::openweather::schedule_hourly_between_sunrise_sunset(scheduler_wr, running_clone).await; 
+        weather::openweather::schedule_hourly_between_sunrise_sunset(scheduler_wr.clone(), running_clone).await; 
     });
 
 
-
-    let house = Arc::new(House::new(Shutter::new(18), Shutter::new(17), Shutter::new(27))); // Initialize a house with three shutters on GPIO pins 17, 18 and 19
+    let house_mode = Arc::new(Mutex::new(HouseMode::Auto));
+    let house = Arc::new(House::new(Shutter::new(18), Shutter::new(17), Shutter::new(27), house_mode)); // Initialize a house with three shutters on GPIO pins 17, 18 and 19
     let house_wr = weather_response.clone();
     let house_running = running.clone();
     let open_running = running.clone();
@@ -70,17 +81,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         open_house.open_with_sun(open_running).await;
 
     });
-        tokio::spawn(async move {
-        close_house.close_all_with_sun(close_running).await;
+    tokio::spawn(async move {
+        close_house.close_with_sun(close_running).await;
 
     });
   
+    let house_mode_changing = Arc::clone(&house);
+    house_mode_changing.set_mode(HouseMode::Absence).await;
 
     // Keep the main thread alive until 'running' becomes false
     while running.load(Ordering::SeqCst) {
         tokio::time::sleep(Duration::from_secs(10)).await;
         //debug!("Main loop alive, weather response: {:?}", weather_response.lock().unwrap());
     }
+
+
     info!("shutters-service stopping");
     Ok(())
 
