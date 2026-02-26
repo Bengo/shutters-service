@@ -17,6 +17,5 @@ chrono = "0.4"
 chrono-tz = "0.8"
 sunrise = "3.0.0"
 libsystemd = "0.7.2"
-zbus = "5.14.0"
-zvariant = "5.10.0"
+zbus = { version = "5", default-features = false, features = ["tokio"] }
 serde = "1.0.228"
