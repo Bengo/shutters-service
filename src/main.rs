@@ -86,8 +86,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     });
   
-    let house_mode_changing = Arc::clone(&house);
-    house_mode_changing.set_mode(HouseMode::Absence).await;
+    // TODO: Add a way to change the house mode (e.g. via a REST API or a CLI command)
+   // let house_mode_changing = Arc::clone(&house);
+    //house_mode_changing.set_mode(HouseMode::Absence).await;
 
     // Keep the main thread alive until 'running' becomes false
     while running.load(Ordering::SeqCst) {
