@@ -24,10 +24,13 @@ struct ShutterService {
 #[interface(name = "fr.bengo.ShutterService")]
 impl ShutterService {
     async fn change_mode(&mut self, new_mode: HouseMode) -> zbus::fdo::Result<()> {
-        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-
         self.house.set_mode(new_mode).await;
         Ok(())
+    }
+
+    async fn get_mode(&mut self) -> zbus::fdo::Result<HouseMode> {
+        let mode = self.house.get_mode().await;
+        Ok(mode)
     }
 
     async fn open_all(&self) -> String {
@@ -144,7 +147,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
     let house_mode = Arc::new(Mutex::new(HouseMode::Auto));
-    let house = Arc::new(House::new(Shutter::new(18), Shutter::new(17), Shutter::new(27), house_mode)); // Initialize a house with three shutters on GPIO pins 17, 18 and 19
+    let house = Arc::new(House::new(Shutter::new(22), Shutter::new(17), Shutter::new(27), house_mode)); // Initialize a house with three shutters on GPIO pins 17, 18 and 19
     let shutter_service = ShutterService { house: house.clone() };
     let _conn = connection::Builder::session()?
         .name("fr.bengo.ShutterService")?

@@ -14,7 +14,7 @@ use zbus::zvariant::Type;
 const LAT: f64 = 48.43000;
 const LON: f64 = -4.63;
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Type)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Type, Clone, Copy)]
 pub enum HouseMode {
    Auto,
    Absence,
@@ -167,5 +167,11 @@ impl House {
         let mut current_mode = self.mode.lock().await;
         info!("Changing house mode from {:?} to {:?}", *current_mode, new_mode);
         *current_mode = new_mode;
+    }
+
+    pub async fn get_mode(&self) -> HouseMode {
+        let current_mode = self.mode.lock().await;
+        // On déréférence pour obtenir une copie de la valeur (grâce à Copy/Clone)
+        *current_mode
     }
 }  
