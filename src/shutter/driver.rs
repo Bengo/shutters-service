@@ -1,5 +1,5 @@
 use rppal::gpio::Gpio;
-use log::{debug};
+use log::{info};
 
 
 pub struct Shutter {
