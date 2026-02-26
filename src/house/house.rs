@@ -7,11 +7,14 @@ use chrono_tz::Europe::Paris;
 use sunrise::{Coordinates, SolarDay, SolarEvent};
 use crate::Shutter;
 use crate::weather::openweather::WeatherData;
+use serde::{Serialize, Deserialize};
+use zbus::zvariant::Type;
+
 
 const LAT: f64 = 48.43000;
 const LON: f64 = -4.63;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Type)]
 pub enum HouseMode {
    Auto,
    Absence,
@@ -31,10 +34,29 @@ pub struct House {
 }
 
 impl House {
+
     pub fn new(pdv: Shutter, chambre_bas: Shutter, chambre_haut: Shutter, mode: Arc<Mutex<HouseMode>>) -> Self {
         House { pdv, chambre_bas, chambre_haut, already_wheater_operated: AtomicBool::new(false), already_sunset_operated: AtomicBool::new(false), already_sunrise_operated: AtomicBool::new(false), mode }
     }
 
+    pub async fn open_all(&self) {
+        self.pdv.open().await;
+        self.chambre_bas.open().await;
+        self.chambre_haut.open().await;
+    }
+
+    pub async fn close_all(&self) {
+        self.pdv.close().await;
+        self.chambre_bas.close().await;
+        self.chambre_haut.close().await;
+    }
+
+    pub async fn middle_all(&self) {
+        self.pdv.middle().await;
+        self.chambre_bas.middle().await;
+        self.chambre_haut.middle().await;
+    }
+    
     pub async fn close_with_sun(&self, running_loop: Arc<AtomicBool>) {
         while running_loop.load(Ordering::SeqCst) {
             // Obtenir l'heure UTC actuelle
@@ -145,6 +167,5 @@ impl House {
         let mut current_mode = self.mode.lock().await;
         info!("Changing house mode from {:?} to {:?}", *current_mode, new_mode);
         *current_mode = new_mode;
-        
     }
 }  

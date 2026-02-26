@@ -14,6 +14,84 @@ mod house;
 use shutter::driver::Shutter;
 use house::house::House;
 use house::house::HouseMode;
+use zbus::{connection, interface};
+
+
+struct ShutterService {
+    house: Arc<House>
+}
+
+#[interface(name = "fr.bengo.ShutterService")]
+impl ShutterService {
+    async fn change_mode(&mut self, new_mode: HouseMode) -> zbus::fdo::Result<()> {
+        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+
+        self.house.set_mode(new_mode).await;
+        Ok(())
+    }
+
+    async fn open_all(&self) -> String {
+        self.house.open_all().await;
+        "All shutters opened".to_string()
+    }
+    
+    async fn close_all(&self) -> String {
+        self.house.close_all().await;
+        "All shutters closed".to_string()
+     }
+
+     async fn middle_all(&self) -> String {
+        self.house.middle_all().await;
+        "All shutters set to middle position".to_string()
+     }
+
+     async fn open_pdv(&self) -> String {
+        self.house.pdv.open().await;
+        "Piece de vie ouverte".to_string()
+     }
+
+    async fn close_pdv(&self) -> String {
+        self.house.pdv.close().await;
+        "Piece de vie closed".to_string()
+    }
+
+    async fn middle_pdv(&self) -> String {
+        self.house.pdv.middle().await;
+        "Piece de vie set to middle position".to_string()
+     }
+
+     async fn open_chambre_bas(&self) -> String {
+        self.house.chambre_bas.open().await;
+        "Chambre bas ouverte".to_string()
+     }
+
+     async fn close_chambre_bas(&self) -> String {
+        self.house.chambre_bas.close().await;
+        "Chambre bas closed".to_string()
+     }
+
+     async fn middle_chambre_bas(&self) -> String {
+        self.house.chambre_bas.middle().await;
+        "Chambre bas set to middle position".to_string()
+     }
+
+     async fn open_chambre_haut(&self) -> String {
+        self.house.chambre_haut.open().await;
+        "Chambre haut ouverte".to_string()
+     }
+
+     async fn close_chambre_haut(&self) -> String {
+        self.house.chambre_haut.close().await;
+        "Chambre haut closed".to_string()
+     }
+
+     async fn middle_chambre_haut(&self) -> String {
+        self.house.chambre_haut.middle().await;
+        "Chambre haut set to middle position".to_string()
+     }
+}
+
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -67,6 +145,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let house_mode = Arc::new(Mutex::new(HouseMode::Auto));
     let house = Arc::new(House::new(Shutter::new(18), Shutter::new(17), Shutter::new(27), house_mode)); // Initialize a house with three shutters on GPIO pins 17, 18 and 19
+    let shutter_service = ShutterService { house: house.clone() };
+    let _conn = connection::Builder::session()?
+        .name("fr.bengo.ShutterService")?
+        .serve_at("/fr/bengo/ShutterService", shutter_service)?
+        .build()
+        .await?;
+   
     let house_wr = weather_response.clone();
     let house_running = running.clone();
     let open_running = running.clone();
@@ -85,16 +170,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         close_house.close_with_sun(close_running).await;
 
     });
-  
-    let house_mode_changing = Arc::clone(&house);
-    house_mode_changing.set_mode(HouseMode::Absence).await;
 
     // Keep the main thread alive until 'running' becomes false
     while running.load(Ordering::SeqCst) {
         tokio::time::sleep(Duration::from_secs(10)).await;
         //debug!("Main loop alive, weather response: {:?}", weather_response.lock().unwrap());
     }
-
 
     info!("shutters-service stopping");
     Ok(())
