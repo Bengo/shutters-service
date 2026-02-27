@@ -147,7 +147,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
     let house_mode = Arc::new(Mutex::new(HouseMode::Auto));
-    let house = Arc::new(House::new(Shutter::new(22), Shutter::new(17), Shutter::new(27), house_mode)); // Initialize a house with three shutters on GPIO pins 17, 18 and 19
+    let house = Arc::new(House::new(Shutter::new(27), Shutter::new(17), Shutter::new(22), house_mode)); // Initialize a house with three shutters on GPIO pins 17, 18 and 19
     let shutter_service = ShutterService { house: house.clone() };
     let _conn = connection::Builder::session()?
         .name("fr.bengo.ShutterService")?
