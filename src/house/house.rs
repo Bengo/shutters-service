@@ -69,7 +69,7 @@ impl House {
             
             let sunset_time = solar_day.event_time(SolarEvent::Sunset)
                 .map(|dt| dt.with_timezone(&Paris).time());
-            let sunset_close = sunset_time.map(|time| time + chrono::Duration::minutes(15));
+            let sunset_close = sunset_time.map(|time| time + chrono::Duration::minutes(5));
 
             if sunset_close.is_some() && sunset_close.unwrap().hour() == paris_time.hour() && sunset_close.unwrap().minute() <= paris_time.minute() && !self.already_sunset_operated.load(Ordering::SeqCst) {
                 let current_mode = self.mode.lock().await;
